@@ -57,7 +57,7 @@ function setDigitalData() {
     publicationDate,
   };
 
-  console.log(meta);
+  console.log(meta, `=> ${window.marketingtech.adobe.analytics.additionalAccounts}`);
 
   const lang = 'en-US';
 
