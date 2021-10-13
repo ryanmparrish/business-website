@@ -17,7 +17,7 @@ import {
   getMetadata,
 } from './scripts.js';
 
-const { target } = getHelixEnv();
+const { target, reportSuites } = getHelixEnv();
 window.marketingtech = window.marketingtech || {};
 window.marketingtech.adobe = {
   target,
@@ -26,7 +26,11 @@ window.marketingtech.adobe = {
     property: 'global',
     environment: 'production',
   },
+  analytics: {
+    additionalAccounts: reportSuites,
+  },
 };
+
 window.targetGlobalSettings = window.targetGlobalSettings || {};
 window.targetGlobalSettings.bodyHidingEnabled = false;
 

@@ -131,6 +131,7 @@ export function getHelixEnv() {
       adminconsole: 'stage.adminconsole.adobe.com',
       account: 'stage.account.adobe.com',
       target: false,
+      reportSuites: 'adbadobedxqa',
     },
     prod: {
       ims: 'prod',
@@ -138,9 +139,15 @@ export function getHelixEnv() {
       adminconsole: 'adminconsole.adobe.com',
       account: 'account.adobe.com',
       target: true,
+      reportSuites: 'adbadobedxprod',
     },
   };
   const env = envs[envName];
+
+  /* override qa report suites for everything other than prod host */
+  if (!window.location.hostname.includes('business.adobe.com')) {
+    env.reportSuites = envs.stage.reportSuites;
+  }
 
   const overrideItem = sessionStorage.getItem('helix-env-overrides');
   if (overrideItem) {
