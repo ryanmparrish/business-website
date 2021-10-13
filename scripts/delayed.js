@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /*
  * Copyright 2021 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
@@ -10,8 +11,11 @@
  * governing permissions and limitations under the License.
  */
 
-/* globals webVitals */
-import { loadScript, sampleRUM, getHelixEnv } from './scripts.js';
+/* globals webVitals digitalData, _satellite */
+import {
+  loadScript, sampleRUM, getHelixEnv,
+  getMetadata,
+} from './scripts.js';
 
 const { target } = getHelixEnv();
 window.marketingtech = window.marketingtech || {};
@@ -26,7 +30,58 @@ window.marketingtech.adobe = {
 window.targetGlobalSettings = window.targetGlobalSettings || {};
 window.targetGlobalSettings.bodyHidingEnabled = false;
 
-const launchScriptEl = loadScript('https://www.adobe.com/marketingtech/main.no-promise.min.js');
+/**
+ * sets digital data
+ */
+
+function setDigitalData() {
+  const category = getMetadata('category');
+  const tags = getMetadata('tag');
+  const industry = getMetadata('industry');
+  const journeyStage = getMetadata('journey-stage');
+  const author = getMetadata('author');
+  const business = getMetadata('business');
+  const publicationDate = getMetadata('publication-date');
+
+  // eslint-disable-next-line no-unused-vars
+  const meta = {
+    category,
+    tags,
+    industry,
+    journeyStage,
+    author,
+    business,
+    publicationDate,
+  };
+
+  const lang = 'en-US';
+
+  digitalData._set('page.pageInfo.language', lang);
+  digitalData._set('page.pageInfo.siteSection', 'business.adobe.com');
+}
+
+/**
+ * tracks the initial page load
+ */
+function trackPageLoad() {
+  if (!digitalData || !_satellite) {
+    return;
+  }
+
+  // pageload for initial pageload (For regular tracking of pageload hits)
+  _satellite.track('pageload', {
+    digitalData: digitalData._snapshot(),
+  });
+}
+
+window.targetGlobalSettings = {
+  bodyHidingEnabled: false,
+};
+
+const launchScriptEl = loadScript('https://www.adobe.com/marketingtech/main.min.js', () => {
+  setDigitalData();
+  trackPageLoad();
+});
 launchScriptEl.setAttribute('data-seed-adobelaunch', 'true');
 
 /* Core Web Vitals RUM collection */
