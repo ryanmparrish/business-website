@@ -36,7 +36,7 @@ window.targetGlobalSettings.bodyHidingEnabled = false;
 
 function setDigitalData() {
   const category = getMetadata('category');
-  const tags = getMetadata('tag');
+  const tags = getMetadata('article:tag');
   const industry = getMetadata('industry');
   const journeyStage = getMetadata('journey-stage');
   const author = getMetadata('author');
