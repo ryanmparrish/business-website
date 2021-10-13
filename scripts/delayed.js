@@ -43,7 +43,6 @@ function setDigitalData() {
   const business = getMetadata('business');
   const publicationDate = getMetadata('publication-date');
 
-  // eslint-disable-next-line no-unused-vars
   const meta = {
     category,
     tags,
@@ -53,6 +52,8 @@ function setDigitalData() {
     business,
     publicationDate,
   };
+
+  console.log(meta);
 
   const lang = 'en-US';
 
