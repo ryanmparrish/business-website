@@ -10,24 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-/* globals webVitals */
-import { loadScript, sampleRUM, getHelixEnv } from './scripts.js';
-
-const { target } = getHelixEnv();
-window.marketingtech = window.marketingtech || {};
-window.marketingtech.adobe = {
-  target,
-  audienceManager: true,
-  launch: {
-    property: 'global',
-    environment: 'production',
-  },
-};
-window.targetGlobalSettings = window.targetGlobalSettings || {};
-window.targetGlobalSettings.bodyHidingEnabled = false;
-
-const launchScriptEl = loadScript('https://www.adobe.com/marketingtech/main.no-promise.min.js');
-launchScriptEl.setAttribute('data-seed-adobelaunch', 'true');
+/* globals  */
+import { loadScript, sampleRUM } from './scripts.js';
 
 function updateExternalLinks() {
   document.querySelectorAll('main a, footer a').forEach((a) => {
@@ -49,21 +33,28 @@ updateExternalLinks();
 
 sampleRUM('cwv');
 
-function storeCWV(measurement) {
-  const rum = { cwv: { } };
-  rum.cwv[measurement.name] = measurement.value;
-  sampleRUM('cwv', rum);
+async function setupLinkTracking() {
+  const resp = await fetch('/blog/instrumentation.json');
+  const json = await resp.json();
+  const linkTracking = json['link-tracking'].data;
+  linkTracking.forEach((entry) => {
+    // eslint-disable-next-line no-underscore-dangle
+    document.querySelectorAll(entry.selector).forEach((el) => {
+      el.setAttribute('daa-lh', el.getAttribute('data-block-name'));
+      el.querySelectorAll('a').forEach((a) => {
+        if (a.href) {
+          let value = '';
+          const img = a.querySelector('img');
+          if (img) {
+            value = img.getAttribute('alt');
+          } else {
+            value = a.textContent.substr(0, 64);
+          }
+          a.setAttribute('daa-ll', value);
+        }
+      });
+    });
+  });
 }
 
-if (window.hlx.rum.isSelected) {
-  const script = document.createElement('script');
-  script.src = 'https://unpkg.com/web-vitals';
-  script.onload = () => {
-    // When loading `web-vitals` using a classic script, all the public
-    // methods can be found on the `webVitals` global namespace.
-    webVitals.getCLS(storeCWV);
-    webVitals.getFID(storeCWV);
-    webVitals.getLCP(storeCWV);
-  };
-  document.head.appendChild(script);
-}
+setupLinkTracking();

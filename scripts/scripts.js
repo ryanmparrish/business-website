@@ -16,9 +16,6 @@
  * @param {Object} data additional data for RUM sample
  */
 
-// eslint-disable-next-line object-curly-newline
-if (!navigator.sendBeacon) { window.data = JSON.stringify({ referer: window.location.href, checkpoint: 'unsupported', weight: 1 }); new Image().src = `https://rum.hlx3.page/.rum/1?data=${window.data}`; }
-
 export function sampleRUM(checkpoint, data = {}) {
   try {
     window.hlx = window.hlx || {};
@@ -35,14 +32,31 @@ export function sampleRUM(checkpoint, data = {}) {
     }
     const { random, weight, id } = window.hlx.rum;
     if (random && (random * weight < 1)) {
-      // eslint-disable-next-line object-curly-newline
-      const body = JSON.stringify({ weight, id, referer: window.location.href, generation: 'biz-gen1', checkpoint, ...data });
-      const url = `https://rum.hlx3.page/.rum/${weight}`;
-      // eslint-disable-next-line no-unused-expressions
-      navigator.sendBeacon(url, body); // we should probably use XHR instead of fetch
+      const sendPing = () => {
+        // eslint-disable-next-line object-curly-newline
+        const body = JSON.stringify({ weight, id, referer: window.location.href, generation: 'biz-gen1', checkpoint, ...data });
+        const url = `https://rum.hlx3.page/.rum/${weight}`;
+        // eslint-disable-next-line no-unused-expressions
+        navigator.sendBeacon(url, body);
+      };
+      sendPing();
+      // special case CWV
+      if (checkpoint === 'cwv') {
+        // eslint-disable-next-line import/no-unresolved
+        import('./web-vitals-module-2-1-2.js').then((mod) => {
+          const storeCWV = (measurement) => {
+            data.cwv = {};
+            data.cwv[measurement.name] = measurement.value;
+            sendPing();
+          };
+          mod.getCLS(storeCWV);
+          mod.getFID(storeCWV);
+          mod.getLCP(storeCWV);
+        });
+      }
     }
   } catch (e) {
-    // somethign went wrong
+    // something went wrong
   }
 }
 
@@ -74,6 +88,17 @@ const LANG = {
   IT: 'it',
   JP: 'jp',
   BR: 'br',
+};
+
+const LANG_LOC = {
+  en: 'en-US',
+  de: 'de-DE',
+  fr: 'fr-FR',
+  ko: 'ko-KR',
+  es: 'es-ES', // es-MX?
+  it: 'it-IT',
+  jp: 'ja-JP',
+  br: 'pt-BR',
 };
 
 let language;
@@ -130,14 +155,12 @@ export function getHelixEnv() {
       adobeIO: 'cc-collab-stage.adobe.io',
       adminconsole: 'stage.adminconsole.adobe.com',
       account: 'stage.account.adobe.com',
-      target: false,
     },
     prod: {
       ims: 'prod',
       adobeIO: 'cc-collab.adobe.io',
       adminconsole: 'adminconsole.adobe.com',
       account: 'account.adobe.com',
-      target: true,
     },
   };
   const env = envs[envName];
@@ -344,15 +367,14 @@ function buildTagHeader(mainEl) {
     [h1],
     [{ elems: [picture.closest('p')] }],
   ]);
-  div.append(tagHeaderBlockEl);
+  div.prepend(tagHeaderBlockEl);
 }
 
-function buildArticleFeed(mainEl) {
-  const { pathname } = window.location;
+function buildArticleFeed(mainEl, type) {
   const div = document.createElement('div');
   const title = mainEl.querySelector('h1').textContent.trim();
   const articleFeedEl = buildBlock('article-feed', [
-    [`${pathname.includes('/tags/') ? 'tags' : 'category'}`, title],
+    [type, title],
   ]);
   div.append(articleFeedEl);
   mainEl.append(div);
@@ -394,9 +416,11 @@ function buildAutoBlocks(mainEl) {
       buildArticleHeader(mainEl);
       buildTagsBlock(mainEl);
     }
-    if (window.location.pathname.includes('/categories/') || window.location.pathname.includes('/tags/')) {
+    if (window.location.pathname.includes('/tags/')) {
       buildTagHeader(mainEl);
-      buildArticleFeed(mainEl);
+      if (!document.querySelector('.article-feed')) {
+        buildArticleFeed(mainEl, 'tags');
+      }
     }
     buildImageBlocks(mainEl);
   } catch (error) {
@@ -435,7 +459,7 @@ function unwrapBlock(block) {
 
 function splitSections() {
   document.querySelectorAll('main > div > div').forEach((block) => {
-    const blocksToSplit = ['article-header', 'recommended-articles'];
+    const blocksToSplit = ['article-header', 'article-feed', 'recommended-articles'];
     if (blocksToSplit.includes(block.className)) {
       unwrapBlock(block);
     }
@@ -688,6 +712,12 @@ export function decorateMain(main) {
   removeEmptySections();
   wrapSections(main.querySelectorAll(':scope > div'));
   decorateBlocks(main);
+
+  /* hide h1 on homepage */
+  if (window.location.pathname.endsWith('/blog/')) {
+    const h1 = document.querySelector('h1');
+    if (h1) h1.classList.add('hidden');
+  }
 }
 
 /**
@@ -713,14 +743,47 @@ export function addFavIcon(href) {
  */
 
 export async function fetchBlogArticleIndex() {
-  const resp = await fetch(`${getRootPath()}/query-index.json`);
+  const pageSize = 1000;
+  window.blogIndex = window.blogIndex || {
+    data: [],
+    byPath: {},
+    offset: 0,
+    complete: false,
+  };
+  if (window.blogIndex.complete) return (window.blogIndex);
+  const index = window.blogIndex;
+  const resp = await fetch(`${getRootPath()}/query-index.json?limit=${pageSize}&offset=${index.offset}`);
   const json = await resp.json();
-  const byPath = {};
+  const complete = (json.limit + json.offset) === json.total;
   json.data.forEach((post) => {
-    byPath[post.path.split('.')[0]] = post;
+    index.data.push(post);
+    index.byPath[post.path.split('.')[0]] = post;
   });
-  const index = { data: json.data, byPath };
+  index.complete = complete;
+  index.offset = json.offset + pageSize;
   return (index);
+}
+
+export function makeLinkRelative(href) {
+  const url = new URL(href);
+  const host = url.hostname;
+  if (host.endsWith('.page') || host.endsWith('.live') || host === 'business.adobe.com') return (`${url.pathname}${url.search}${url.hash}`);
+  return (href);
+}
+
+export function rewritePath(path) {
+  let newpath = path;
+  const replacements = [{
+    from: 'news',
+    to: 'the-latest',
+  }, {
+    from: 'insights',
+    to: 'perspectives',
+  }];
+  replacements.forEach((r) => {
+    newpath = newpath.replace(`/${r.from}/`, `/${r.to}/`);
+  });
+  return newpath;
 }
 
 /**
@@ -733,20 +796,22 @@ export async function fetchBlogArticleIndex() {
 async function getMetadataJson(path) {
   const resp = await fetch(path.split('.')[0]);
   const text = await resp.text();
-  const headStr = text.split('<head>')[1].split('</head>')[0];
-  const head = document.createElement('head');
-  head.innerHTML = headStr;
-  const metaTags = head.querySelectorAll(':scope > meta');
   const meta = {};
-  metaTags.forEach((metaTag) => {
-    const name = metaTag.getAttribute('name') || metaTag.getAttribute('property');
-    const value = metaTag.getAttribute('content');
-    if (meta[name]) {
-      meta[name] += `, ${value}`;
-    } else {
-      meta[name] = value;
-    }
-  });
+  if (resp.status === 200 && text && text.includes('<head>')) {
+    const headStr = text.split('<head>')[1].split('</head>')[0];
+    const head = document.createElement('head');
+    head.innerHTML = headStr;
+    const metaTags = head.querySelectorAll(':scope > meta');
+    metaTags.forEach((metaTag) => {
+      const name = metaTag.getAttribute('name') || metaTag.getAttribute('property');
+      const value = metaTag.getAttribute('content');
+      if (meta[name]) {
+        meta[name] += `, ${value}`;
+      } else {
+        meta[name] = value;
+      }
+    });
+  }
   return (JSON.stringify(meta));
 }
 
@@ -759,16 +824,19 @@ async function getMetadataJson(path) {
 export async function getBlogArticle(path) {
   const json = await getMetadataJson(`${path}.metadata.json`);
   const meta = JSON.parse(json);
-  const articleMeta = {
-    description: meta.description,
-    title: meta['og:title'],
-    image: meta['og:image'],
-    imageAlt: meta['og:image:alt'],
-    date: meta['publication-date'],
-    path,
-    category: meta.category,
-  };
-  return (articleMeta);
+  if (meta['og:title']) {
+    const articleMeta = {
+      description: meta.description,
+      title: meta['og:title'],
+      image: meta['og:image'],
+      imageAlt: meta['og:image:alt'],
+      date: meta['publication-date'],
+      path,
+      category: meta.category,
+    };
+    return (articleMeta);
+  }
+  return null;
 }
 
 /**
@@ -806,14 +874,138 @@ export function loadScript(url, callback, type) {
   return script;
 }
 
+function unhideBody(id) {
+  try {
+    document.head.removeChild(document.getElementById(id));
+  } catch (e) {
+    // nothing
+  }
+}
+
+function hideBody(id) {
+  const style = document.createElement('style');
+  style.id = id;
+  style.innerHTML = 'body{visibility: hidden !important}';
+
+  try {
+    document.head.appendChild(style);
+  } catch (e) {
+    // nothing
+  }
+}
+
+/**
+ * sets digital data
+ */
+
+async function setDigitalData(digitaldata) {
+  digitaldata.page.pageInfo.category = 'unknown: before instrumentation.json';
+  const resp = await fetch('/blog/instrumentation.json');
+  const json = await resp.json();
+  delete digitaldata.page.pageInfo.category;
+
+  const digitalDataMap = json.digitaldata.data;
+  digitalDataMap.forEach((mapping) => {
+    const metaValue = getMetadata(mapping.metadata);
+    if (metaValue) {
+      // eslint-disable-next-line no-underscore-dangle
+      digitaldata._set(mapping.digitaldata, metaValue);
+    }
+  });
+
+  const digitalDataLists = json['digitaldata-lists'].data;
+  digitalDataLists.forEach((listEntry) => {
+    const metaValue = getMetadata(listEntry.metadata);
+    if (metaValue) {
+      // eslint-disable-next-line no-underscore-dangle
+      let listValue = digitaldata._get(listEntry.digitaldata) || '';
+      const name = listEntry['list-item-name'];
+      const metaValueArr = listEntry.delimiter ? metaValue.split(listEntry.delimiter) : [metaValue];
+      metaValueArr.forEach((value) => {
+        const escapedValue = value.split('|').join(); // well, well...
+        listValue += `${listValue ? ' | ' : ''}${name}: ${escapedValue}`;
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      digitaldata._set(listEntry.digitaldata, listValue);
+    }
+  });
+}
+
+async function loadMartech() {
+  const usp = new URLSearchParams(window.location.search);
+  const alloy = usp.get('alloy');
+
+  // set data layer properties
+  window.digitalData = {
+    page: {
+      pageInfo: {
+        language: LANG_LOC[getLanguage()] || '',
+        category: 'unknown: before setDigitalData()',
+      },
+    },
+  };
+
+  const target = getMetadata('target').toLocaleLowerCase() === 'on';
+
+  // load bootstrap script
+  let bootstrapScriptUrl = 'https://www.adobe.com/marketingtech/';
+  if (alloy === 'on') {
+    window.marketingtech = {
+      adobe: {
+        target,
+        launch: {
+          url: 'https://assets.adobedtm.com/d4d114c60e50/cf25c910a920/launch-1bba233684fa-development.js',
+          load: (l) => {
+            const delay = () => (
+              setTimeout(l, 3500)
+            );
+            if (document.readyState === 'complete') {
+              delay();
+            } else {
+              window.addEventListener('load', delay);
+            }
+          },
+        },
+      },
+    };
+    bootstrapScriptUrl += 'main.alloy.min.js';
+  } else {
+    window.marketingtech = {
+      adobe: {
+        target,
+        audienceManager: true,
+        launch: {
+          property: 'global',
+          environment: 'production',
+        },
+      },
+    };
+    window.targetGlobalSettings = window.targetGlobalSettings || {};
+    bootstrapScriptUrl += 'main.min.js';
+  }
+
+  loadScript(bootstrapScriptUrl, () => {
+    setDigitalData(window.digitalData);
+  });
+}
+
 /**
  * loads everything needed to get to LCP.
  */
 async function loadEager() {
   const main = document.querySelector('main');
   if (main) {
+    const bodyHideStyleId = 'at-body-style';
     decorateMain(main);
     document.querySelector('body').classList.add('appear');
+    const target = getMetadata('target').toLocaleLowerCase() === 'on';
+    if (target) {
+      hideBody(bodyHideStyleId);
+      setTimeout(() => {
+        unhideBody(bodyHideStyleId);
+      }, 3000);
+    }
+
     const lcpBlocks = ['featured-article', 'article-header'];
     const block = document.querySelector('.block');
     const hasLCPBlock = (block && lcpBlocks.includes(block.getAttribute('data-block-name')));
@@ -858,6 +1050,7 @@ async function loadLazy() {
   loadBlocks(main);
   loadCSS('/styles/lazy-styles.css');
   addFavIcon('/styles/favicon.svg');
+  loadMartech();
 }
 
 /**
@@ -889,7 +1082,7 @@ async function decoratePage() {
   loadDelayed();
 }
 
-decoratePage(window);
+decoratePage();
 
 function setHelixEnv(name, overrides) {
   if (name) {
@@ -931,7 +1124,7 @@ displayEnv();
  * (needs a refactor)
  */
 
-function stamp(message) {
+export function stamp(message) {
   if (window.name.includes('performance')) {
     debug(`${new Date() - performance.timing.navigationStart}:${message}`);
   }
