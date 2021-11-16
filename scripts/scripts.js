@@ -214,19 +214,26 @@ function wrapSections(sections) {
  */
 export function decorateBlock(block) {
   const classes = Array.from(block.classList.values());
+  const sectionType = getMetadata('type').toLowerCase();
   let blockName = classes[0];
   if (!blockName) return;
   const section = block.closest('.section-wrapper');
   if (section) {
     section.classList.add(`${blockName}-container`.replace(/--/g, '-'));
+    if (sectionType) {
+      section.classList.add(`meta-type-${sectionType}`);
+    }
   }
-  const blocksWithVariants = ['recommended-articles'];
+  const blocksWithVariants = ['recommended-articles', 'marquee', 'z-pattern'];
   blocksWithVariants.forEach((b) => {
     if (blockName.startsWith(`${b}-`)) {
       const options = blockName.substring(b.length + 1).split('-').filter((opt) => !!opt);
       blockName = b;
       block.classList.add(b);
       block.classList.add(...options);
+      if (section) {
+        section.classList.add(`${b}-container`);
+      }
     }
   });
 

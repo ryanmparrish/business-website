@@ -25,6 +25,7 @@
   --body-font-family: 'adobe-clean', 'Trebuchet MS', sans-serif;
   --body-font-weight: 300;
   --body-color: var(--color-black);
+  --body-color-dark: var(--color-white);
   --body-line-height: 1.5;
   --body-font-size-xxl: 1.75rem; /* 28px */
   --body-font-size-xl: 1.375rem; /* 22px */
@@ -46,7 +47,7 @@
   --heading-font-size-s: 1.25rem; /* 20px */
   --heading-font-size-xs: 1.125rem; /* 18px */
   --heading-font-size-xxs: 0.875rem; /* 14px */
-  
+
   /* details */
   --detail-font-weight: 700;
   --detail-color: var(--color-gray-600);
@@ -54,6 +55,17 @@
   --detail-font-size-l: 1.25rem; /* 20px */
   --detail-font-size-m: 1rem; /* 16px */
   --detail-font-size-s: 0.75rem; /* 12px */
+
+  /* Spacing */
+  --spacing-s: 16px;
+  --spacing-m: 24px;
+  --spacing-l: 48px;
+  --spacing-xl: 56px;
+  --spacing-xxl: 80px;
+
+  /* Grid */
+  --grid-mobile-container-width: 83.4%;
+  --grid-desktop-container-width: 1400px;
 }
 
 
@@ -88,7 +100,7 @@ a.button:any-link {
   /* outline: none; (keep outline for a11n) */
   text-align: center;
   font-size: var(--body-font-size-s);
-  font-style: normal; 
+  font-style: normal;
   font-weight: 600;
   cursor: pointer;
   color: var(--color-white);
@@ -157,6 +169,18 @@ a.button.primary.light:hover, a.button.primary.light:focus {
   color: var(--color-white);
 }
 
+a.button.primary.dark:any-link {
+  background-color: transparent;
+  color: var(--color-white);
+  border-color: var(--color-white);
+}
+
+a.button.primary.dark:hover, a.button.primary.light:focus {
+  background-color: var(--color-white);
+  border-color: var(--color-white);
+  color: var(--color-black);
+}
+
 a.button.secondary.light:any-link {
   color: var(--color-gray-600);
   border-color: var(--color-gray-600);
@@ -166,6 +190,15 @@ a.button.secondary.light:hover, a.button.secondary.light:focus {
   background-color: var(--color-gray-700);
   border-color: var(--color-gray-700);
   color: var(--color-white);
+}
+
+a.button.block:any-link {
+  display: block;
+}
+@media (min-width:600px) {
+  a.button.block:any-link {
+    display: inline;
+  }
 }
 
 a.button > svg {
@@ -397,7 +430,7 @@ main .featured-article-container div h1 {
 }
 
 main .article-feed {
-  min-height: 900px;  
+  min-height: 900px;
 }
 
 body {
@@ -406,4 +439,8 @@ body {
 
 body.appear {
   visibility: unset;
+}
+
+.dark {
+  color: var(--body-color-dark)
 }

@@ -1,0 +1,167 @@
+
+main .section-wrapper.enhanced-container {
+  margin-top: 3rem;
+}
+
+main > .section-wrapper.enhanced-container:first-child {
+  margin-top: 65px;
+}
+
+main .section-wrapper.enhanced-container > div {
+  padding: 0;
+}
+
+
+.enhanced {
+  position: relative;
+  padding: 16px 0;
+  min-height: 328px;
+  display: flex;
+  align-items: center;
+  margin: 40px 0;
+}
+.enhanced .hidden {
+  display: none;
+}
+.enhanced .background img {
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+}
+
+.enhanced .background {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.enhanced .container {
+  position: relative;
+  max-width: var(--grid-mobile-container-width);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  flex-direction: column-reverse;
+  width: var(--grid-mobile-container-width);
+}
+
+.enhanced .container .text {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+}
+
+.enhanced .container .text > * {
+  width: 100%;
+}
+
+.enhanced .container .text p:first-of-type {
+  font-size: var(--body-font-size-m);
+  line-height: var(--body-line-height);
+  font-weight: var(--body-font-weight);
+  margin: 0 0 var(--spacing-s) 0;
+}
+
+.enhanced .container .text h1 {
+  font-size: var(--heading-font-size-xl);
+  font-weight: var(--heading-font-weight);
+  line-height: var(--heading-line-height);
+  margin: 0 0 var(--spacing-s) 0;
+}
+
+.enhanced .container .text h1 + p {
+  font-size: var(--body-font-size-m);
+  line-height: var(--body-line-height);
+  margin: 0 0 var(--spacing-m) 0;
+}
+
+.enhanced .container .text h1 + p + p {
+  margin: 0;
+}
+
+.enhanced .container .image {
+  text-align: right;
+}
+
+.enhanced .container div {
+  /*flex: 1 1 auto;*/
+}
+
+.enhanced .container img {
+  object-fit: contain;
+  height: 100%;
+  width: 100%;
+}
+
+.enhanced.large {
+  display: block;
+  padding: 0;
+}
+.enhanced.large .background {
+  position: relative;
+}
+
+/*Tablet*/
+@media (min-width: 700px) {
+  main .section-wrapper.enhanced-container > div {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .enhanced {
+    height: 328px;
+  }
+
+  .enhanced .container {
+    flex-direction: row;
+  }
+
+  .enhanced.small .container {
+    height: 328px;
+  }
+
+  .enhanced.medium {
+    padding: 24px 0;
+  }
+
+  .enhanced.medium .container {
+    height: 512px;
+  }
+
+  .enhanced.large {
+    padding: 48px 0;
+    display: flex;
+  }
+  .enhanced.large .background {
+    position: absolute;
+  }
+
+  .enhanced.large .container {
+    height: 604px;
+  }
+
+
+  .enhanced .container .text,
+  .enhanced .container .image {
+    flex: 0 1 auto;
+  }
+
+  .enhanced .container .text {
+    width: 40%;
+  }
+
+  .enhanced .container .image {
+    width: 50%;
+  }
+}
+
+/*Desktop*/
+@media screen and (min-width: 1400px) {
+  .enhanced .container {
+    width: var(--grid-desktop-container-width);
+  }
+}
