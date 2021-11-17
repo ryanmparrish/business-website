@@ -680,7 +680,7 @@ export function buildArticleCard(article, type = 'article') {
     </div>
     <div class="${type}-card-body">
       <p class="${type}-card-category">
-        <a href="${window.location.origin}${getRootPath()}/categories/${category}">${category}</a>
+        <a href="${window.location.origin}${getRootPath()}/tags/${toClassName(category)}">${category}</a>
       </p>
       <h3>${title}</h3>
       <p>${description}</p>
@@ -845,13 +845,15 @@ export async function getBlogArticle(path) {
  */
 
 export async function fetchPlaceholders() {
-  const resp = await fetch(`${getRootPath()}/placeholders.json`);
-  const json = await resp.json();
-  const placeholders = {};
-  json.data.forEach((placeholder) => {
-    placeholders[placeholder.Key] = placeholder.Text;
-  });
-  return (placeholders);
+  if (!window.placeholders) {
+    const resp = await fetch(`${getRootPath()}/placeholders.json`);
+    const json = await resp.json();
+    window.placeholders = {};
+    json.data.forEach((placeholder) => {
+      window.placeholders[placeholder.Key] = placeholder.Text;
+    });
+  }
+  return window.placeholders;
 }
 
 /**
