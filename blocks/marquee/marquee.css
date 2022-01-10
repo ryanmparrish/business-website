@@ -25,6 +25,7 @@ main .section-wrapper.marquee-container > div {
     object-fit: cover;
     height: 100%;
     width: 100%;
+    display: block;
 }
 
 .marquee .background {
@@ -43,7 +44,6 @@ main .section-wrapper.marquee-container > div {
     justify-content: space-between;
     align-items: stretch;
     flex-direction: column-reverse;
-    width: var(--grid-mobile-container-width);
 }
 
 .marquee .container .text {
@@ -63,10 +63,14 @@ main .section-wrapper.marquee-container > div {
     margin: 0 0 var(--spacing-s) 0;
 }
 
+.marquee .container .text p:last-of-type {
+    margin-bottom: 0;
+}
+
 .marquee .container .text h1 {
     font-size: var(--heading-font-size-xl);
     font-weight: var(--heading-font-weight);
-    line-height: var(--heading-line-height);
+    line-height: var(--heading-line-height-s);
     margin: 0 0 var(--spacing-s) 0;
 }
 
@@ -87,7 +91,9 @@ main .section-wrapper.marquee-container > div {
 .marquee .container div {
     /*flex: 1 1 auto;*/
 }
-
+.marquee #detail {
+    margin-top: 0;
+}
 .marquee .container img {
     object-fit: contain;
     height: 100%;
@@ -100,6 +106,34 @@ main .section-wrapper.marquee-container > div {
 }
 .marquee.large .background {
     position: relative;
+}
+
+.marquee.vh100 {
+    display: block;
+    padding: 0;
+}
+.marquee.vh100 .background {
+    position: relative;
+}
+.marquee.vh100 .background img {
+    min-height: 300px;
+}
+.marquee.vh100 .container {
+    padding: var(--spacing-l);
+}
+
+
+/*indicator arrow*/
+.marquee.vh100 .downarrow {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+}
+
+.marquee.dark {
+    background: #323232;
 }
 
 /*Tablet*/
@@ -133,6 +167,7 @@ main .section-wrapper.marquee-container > div {
     .marquee.large {
         padding: 48px 0;
         display: flex;
+        height: auto;
     }
     .marquee.large .background {
         position: absolute;
@@ -140,6 +175,23 @@ main .section-wrapper.marquee-container > div {
 
     .marquee.large .container {
         height: 604px;
+    }
+
+    .marquee.vh100 {
+        display: flex;
+        /* 100% height - header height */
+        height: calc( 100vh - 64px);
+    }
+    .marquee.vh100 .background {
+        position: absolute;
+    }
+
+    .marquee.vh100 .downarrow {
+        display: block;
+    }
+
+    .marquee.dark {
+        background: transparent;
     }
 
     /*.marquee.quiet .container {*/
@@ -163,7 +215,6 @@ main .section-wrapper.marquee-container > div {
     .marquee .container .text {
         width: 40%;
     }
-
     .marquee .container .image {
         width: 50%;
     }
